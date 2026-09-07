@@ -1,0 +1,22 @@
+# Environment secrets
+.env
+.env.local
+*.env
+!*.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+
+# Supabase CLI local cache
+supabase/.temp/
+supabase/.branches/
+
+# Editor/OS
+.DS_Store

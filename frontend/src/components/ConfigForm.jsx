@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ToggleButton from "./ToggleButton.jsx";
+import StockLogo from "./StockLogo.jsx";
 import { validateScriptName } from "../services/api.js";
+import { fuzzyMatchStocks } from "../utils/fuzzySearch.js";
 
 const emptyForm = {
   name: "",
@@ -29,6 +31,9 @@ export default function ConfigForm({
   const [nameError, setNameError] = useState("");
   const [validatingName, setValidatingName] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(-1);
 
   useEffect(() => {
     if (editingId && initialValues) {
@@ -118,6 +123,38 @@ export default function ConfigForm({
     });
   };
 
+  const handleNameChange = (value) => {
+    handleChange("name", value.toUpperCase());
+    const matches = fuzzyMatchStocks(value);
+    setSuggestions(matches);
+    setShowSuggestions(matches.length > 0);
+    setHighlightIndex(-1);
+  };
+
+  const selectSuggestion = (stock) => {
+    handleChange("name", stock.symbol);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setHighlightIndex(-1);
+  };
+
+  const handleNameKeyDown = (e) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightIndex((i) => (i + 1) % suggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
+    } else if (e.key === "Enter" && highlightIndex >= 0) {
+      e.preventDefault();
+      selectSuggestion(suggestions[highlightIndex]);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+      setHighlightIndex(-1);
+    }
+  };
+
   const nameOk = form.name?.trim() && !nameError && !validatingName;
   const numbersOk =
     parsePositiveNum(form.up_percent) > 0 &&
@@ -169,7 +206,7 @@ export default function ConfigForm({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
+        <div className="relative">
           <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
             Script name
           </label>
@@ -177,12 +214,40 @@ export default function ConfigForm({
             type="text"
             autoComplete="off"
             value={form.name}
-            onChange={(e) => handleChange("name", e.target.value.toUpperCase())}
+            onChange={(e) => handleNameChange(e.target.value)}
+            onKeyDown={handleNameKeyDown}
+            onFocus={() => setShowSuggestions(suggestions.length > 0)}
+            onBlur={() => setShowSuggestions(false)}
             placeholder="e.g. RELIANCE"
             className={`w-full rounded-xl border bg-slate-50/80 px-4 py-2.5 text-sm font-medium tracking-wide text-slate-900 outline-none transition placeholder:text-slate-400 focus:bg-white focus:ring-2 ${
               nameError ? "border-rose-300 focus:ring-rose-200" : "border-slate-200 focus:border-emerald-500 focus:ring-emerald-100"
             }`}
           />
+          {showSuggestions && suggestions.length > 0 && (
+            <ul className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
+              {suggestions.map((stock, i) => (
+                <li key={stock.symbol}>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      selectSuggestion(stock);
+                    }}
+                    onMouseEnter={() => setHighlightIndex(i)}
+                    className={`flex w-full items-center gap-3 px-3 py-2 text-left transition ${
+                      i === highlightIndex ? "bg-emerald-50" : "hover:bg-slate-50"
+                    }`}
+                  >
+                    <StockLogo domain={stock.domain} symbol={stock.symbol} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold text-slate-900">{stock.symbol}</span>
+                      <span className="block truncate text-xs text-slate-500">{stock.name}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
           <div className="mt-1 flex min-h-[1.25rem] items-center gap-2 text-xs">
             {validatingName && <span className="text-slate-400">Checking symbol…</span>}
             {nameError && <span className="font-medium text-rose-600">{nameError}</span>}

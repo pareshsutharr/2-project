@@ -1,7 +1,8 @@
 import { NavLink } from "react-router-dom";
-import { Activity, CalendarDays, LayoutDashboard, Newspaper, Settings2, History } from "lucide-react";
+import { Activity, CalendarDays, LayoutDashboard, Newspaper, Settings2, History, TrendingUp, TrendingDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fetchNiftyQuote } from "../services/api.js";
+import { usePriceDirection } from "../utils/usePriceDirection.js";
 
 const nav = [
   { to: "/news", label: "News", icon: Newspaper },
@@ -52,7 +53,7 @@ export default function Navbar() {
       } catch {
         /* keep last */
       }
-    }, 60000);
+    }, 15000);
     return () => {
       cancelled = true;
       clearInterval(id);
@@ -61,6 +62,7 @@ export default function Navbar() {
 
   const pct = nifty.changePercent;
   const positive = pct != null && pct >= 0;
+  const { direction, flash } = usePriceDirection(nifty.value);
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 shadow-md backdrop-blur-md">
@@ -85,10 +87,20 @@ export default function Navbar() {
             ) : nifty.error ? (
               <span className="text-sm text-slate-400">Unavailable</span>
             ) : (
-              <span className="text-sm font-semibold tabular-nums text-slate-800">
+              <span
+                className={[
+                  "inline-flex items-center gap-1 rounded-md px-1 text-sm font-semibold tabular-nums text-slate-800 transition-colors duration-500",
+                  flash ? (direction === "up" ? "bg-emerald-100" : "bg-rose-100") : "bg-transparent",
+                ].join(" ")}
+              >
+                {direction === "up" ? (
+                  <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+                ) : direction === "down" ? (
+                  <TrendingDown className="h-3.5 w-3.5 text-rose-600" />
+                ) : null}
                 {formatNifty(nifty.value)}
                 {pct != null && (
-                  <span className={`ml-2 text-xs font-semibold ${positive ? "text-emerald-600" : "text-rose-600"}`}>
+                  <span className={`ml-1 text-xs font-semibold ${positive ? "text-emerald-600" : "text-rose-600"}`}>
                     ({positive ? "+" : ""}
                     {pct.toFixed(2)}%)
                   </span>

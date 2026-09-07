@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Banknote, History } from "lucide-react";
+import { Banknote, History, TrendingUp, TrendingDown } from "lucide-react";
 import { fetchExecuteDetails, fetchExecuteRows } from "../services/api.js";
 import ScriptNewsCard from "../components/ScriptNewsCard.jsx";
+import { usePriceDirection } from "../utils/usePriceDirection.js";
 
 function fmtNum(v, opts = {}) {
   if (v == null) return "—";
@@ -107,6 +108,7 @@ export default function Execute() {
     return "neutral";
   }, [details?.current_value, details?.invested_amount]);
 
+  const { direction: priceDirection, flash: priceFlash } = usePriceDirection(details?.current_market_price);
   const currentPrice = Number(details?.current_market_price ?? 0);
   const buyTrigger = Number(details?.buy_trigger_value ?? 0);
   const buyTriggered = currentPrice > 0 && buyTrigger > 0 && currentPrice <= buyTrigger;
@@ -146,11 +148,21 @@ export default function Execute() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Current Price</p>
-              <div className="mt-1 flex items-baseline gap-2">
+              <div
+                className={[
+                  "mt-1 flex items-baseline gap-2 rounded-xl px-2 py-1 -mx-2 transition-colors duration-700",
+                  priceFlash ? (priceDirection === "up" ? "bg-emerald-50" : "bg-rose-50") : "bg-transparent",
+                ].join(" ")}
+              >
                 <Banknote className="h-6 w-6 text-slate-700" />
                 <h2 className="text-5xl font-semibold tracking-tight text-slate-900">
                   {fmtNum(details?.current_market_price, { maximumFractionDigits: 2 })}
                 </h2>
+                {priceDirection === "up" ? (
+                  <TrendingUp className="h-6 w-6 text-emerald-600" />
+                ) : priceDirection === "down" ? (
+                  <TrendingDown className="h-6 w-6 text-rose-600" />
+                ) : null}
               </div>
             </div>
             <div className="mt-1">

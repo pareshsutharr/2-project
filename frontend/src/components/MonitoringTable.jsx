@@ -1,5 +1,6 @@
-import { Play } from "lucide-react";
+import { Play, TrendingUp, TrendingDown } from "lucide-react";
 import Badge from "./Badge.jsx";
+import { usePriceDirection } from "../utils/usePriceDirection.js";
 
 function fmt(n, opts = {}) {
   if (n == null) return "—";
@@ -27,6 +28,57 @@ function triggerCellClass(side, state) {
       : "text-rose-700 bg-rose-50/60 ring-1 ring-rose-200 rounded-lg px-2 py-1";
   }
   return "text-slate-700";
+}
+
+function MonitoringRow({ row: r, onExecute }) {
+  const { direction, flash } = usePriceDirection(r.current);
+  return (
+    <tr className="border-b border-slate-100 transition hover:bg-slate-50/70">
+      <td className="sticky left-0 z-10 bg-white/95 px-4 py-3 backdrop-blur">
+        <div className="flex flex-col">
+          <span className="text-sm font-semibold tracking-wide text-slate-900">{r.script}</span>
+          <span className="text-xs text-slate-400">ID {r.id}</span>
+        </div>
+      </td>
+      <td className="px-4 py-3 text-sm font-semibold tabular-nums text-slate-800">
+        <span
+          className={[
+            "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 transition-colors duration-700",
+            flash ? (direction === "up" ? "bg-emerald-100" : "bg-rose-100") : "bg-transparent",
+          ].join(" ")}
+        >
+          {direction === "up" ? (
+            <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+          ) : direction === "down" ? (
+            <TrendingDown className="h-3.5 w-3.5 text-rose-600" />
+          ) : null}
+          {fmt(r.current)}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-sm tabular-nums">
+        <span className={triggerCellClass("buy", r.buy_visual_state)}>{fmt(r.buy_price)}</span>
+      </td>
+      <td className="px-4 py-3 text-sm tabular-nums">
+        <span className={triggerCellClass("sell", r.sell_visual_state)}>{fmt(r.sell_price)}</span>
+      </td>
+      <td className="px-4 py-3 text-sm tabular-nums text-slate-700">{fmt(r.qty, { maximumFractionDigits: 0 })}</td>
+      <td className="px-4 py-3 text-sm tabular-nums">{r.pnl == null ? <span className="text-slate-400">—</span> : fmt(r.pnl)}</td>
+      <td className="px-4 py-3">
+        <Badge tone={modeTone(r.mode)}>{r.mode}</Badge>
+      </td>
+      <td className="px-4 py-3 text-sm tabular-nums text-slate-700">{fmt(r.buy_slots_left, { maximumFractionDigits: 0 })}</td>
+      <td className="px-4 py-3">
+        <button
+          type="button"
+          onClick={() => onExecute?.(r)}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700"
+        >
+          <Play className="h-3.5 w-3.5" />
+          Execute
+        </button>
+      </td>
+    </tr>
+  );
 }
 
 export default function MonitoringTable({ rows, onExecute }) {
@@ -65,39 +117,7 @@ export default function MonitoringTable({ rows, onExecute }) {
                 </td>
               </tr>
             ) : (
-              rows.map((r) => (
-                <tr key={r.id} className="border-b border-slate-100 transition hover:bg-slate-50/70">
-                  <td className="sticky left-0 z-10 bg-white/95 px-4 py-3 backdrop-blur">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold tracking-wide text-slate-900">{r.script}</span>
-                      <span className="text-xs text-slate-400">ID {r.id}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm font-semibold tabular-nums text-slate-800">{fmt(r.current)}</td>
-                  <td className="px-4 py-3 text-sm tabular-nums">
-                    <span className={triggerCellClass("buy", r.buy_visual_state)}>{fmt(r.buy_price)}</span>
-                  </td>
-                  <td className="px-4 py-3 text-sm tabular-nums">
-                    <span className={triggerCellClass("sell", r.sell_visual_state)}>{fmt(r.sell_price)}</span>
-                  </td>
-                  <td className="px-4 py-3 text-sm tabular-nums text-slate-700">{fmt(r.qty, { maximumFractionDigits: 0 })}</td>
-                  <td className="px-4 py-3 text-sm tabular-nums">{r.pnl == null ? <span className="text-slate-400">—</span> : fmt(r.pnl)}</td>
-                  <td className="px-4 py-3">
-                    <Badge tone={modeTone(r.mode)}>{r.mode}</Badge>
-                  </td>
-                  <td className="px-4 py-3 text-sm tabular-nums text-slate-700">{fmt(r.buy_slots_left, { maximumFractionDigits: 0 })}</td>
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => onExecute?.(r)}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700"
-                    >
-                      <Play className="h-3.5 w-3.5" />
-                      Execute
-                    </button>
-                  </td>
-                </tr>
-              ))
+              rows.map((r) => <MonitoringRow key={r.id} row={r} onExecute={onExecute} />)
             )}
           </tbody>
         </table>

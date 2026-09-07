@@ -15,8 +15,8 @@ node_modules/
 dist/
 
 # Supabase CLI local cache
-supabase/.temp/
-supabase/.branches/
+**/supabase/.temp/
+**/supabase/.branches/
 
 # Editor/OS
 .DS_Store

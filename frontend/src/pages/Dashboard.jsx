@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import MonitoringTable from "../components/MonitoringTable.jsx";
@@ -16,15 +16,23 @@ export default function Dashboard() {
   const [monitoring, setMonitoring] = useState({ rows: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const failCountRef = useRef(0);
 
   const load = useCallback(async () => {
-    setError("");
     try {
       const [s, m] = await Promise.all([fetchDashboardSummary(), fetchDashboardMonitoring()]);
+      failCountRef.current = 0;
       setSummary(s);
       setMonitoring(m);
+      setError("");
     } catch {
-      setError("Could not load dashboard data. Is the backend running?");
+      // A single missed 5s poll is normal transient noise (brief backend hiccup, network
+      // blip) and the numbers on screen are still the last good values — only surface the
+      // banner once failures happen twice in a row so it doesn't flicker on every tick.
+      failCountRef.current += 1;
+      if (failCountRef.current >= 2) {
+        setError("Could not load dashboard data. Is the backend running?");
+      }
     } finally {
       setLoading(false);
     }

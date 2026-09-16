@@ -3,6 +3,7 @@ import { cors } from "npm:hono@4.6.14/cors";
 import * as scriptService from "../_shared/scriptService.ts";
 import { symbolExistsOnNse } from "../_shared/marketService.ts";
 import { decOut } from "../_shared/decimal.ts";
+import { withRetry } from "../_shared/retry.ts";
 import type { Script } from "../_shared/scriptService.ts";
 
 const app = new Hono().basePath("/scripts");
@@ -47,7 +48,7 @@ function parseBody(body: Record<string, unknown>) {
 }
 
 app.get("/", async (c) => {
-  const rows = await scriptService.listScripts();
+  const rows = await withRetry(scriptService.listScripts);
   return c.json(rows.map(serializeScript));
 });
 
@@ -101,6 +102,11 @@ app.delete("/:id", async (c) => {
   const ok = await scriptService.deleteScript(id);
   if (!ok) return c.json({ detail: "Script not found" }, 404);
   return c.body(null, 204);
+});
+
+app.onError((err, c) => {
+  console.error("scripts function error:", err);
+  return c.json({ detail: "Temporarily unavailable, please retry." }, 503);
 });
 
 Deno.serve(app.fetch);

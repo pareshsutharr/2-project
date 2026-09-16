@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Banknote, History, TrendingUp, TrendingDown } from "lucide-react";
 import { fetchExecuteDetails, fetchExecuteRows } from "../services/api.js";
@@ -72,22 +72,32 @@ export default function Execute() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const failCountRef = useRef(0);
 
   const load = useCallback(async () => {
     if (!scriptId) return;
-    setError("");
     try {
       const [d, r] = await Promise.all([fetchExecuteDetails(scriptId), fetchExecuteRows(scriptId)]);
+      failCountRef.current = 0;
       setDetails(d);
       setRows(r.rows || []);
+      setError("");
     } catch {
-      setError("Could not load execute data.");
+      // A single missed 5s poll is normal transient noise (brief backend hiccup, network
+      // blip) and the numbers on screen are still the last good values — only surface the
+      // banner once failures happen twice in a row so it doesn't flicker on every tick.
+      failCountRef.current += 1;
+      if (failCountRef.current >= 2) {
+        setError("Could not load execute data.");
+      }
     } finally {
       setLoading(false);
     }
   }, [scriptId]);
 
   useEffect(() => {
+    failCountRef.current = 0;
+    setError("");
     load();
   }, [load]);
 

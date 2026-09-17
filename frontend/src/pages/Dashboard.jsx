@@ -69,7 +69,7 @@ export default function Dashboard() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Dashboard</h1>
-            <p className="mt-1 text-sm text-slate-500">Premium monitoring view powered by backend APIs.</p>
+            <p className="mt-1 text-sm text-slate-500">Premiums monitoring view powered by backend APIs.</p>
           </div>
           <div className="text-xs font-semibold text-slate-400">
             Refresh: <span className="text-slate-700">5s polling</span>

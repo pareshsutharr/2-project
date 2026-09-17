@@ -77,14 +77,14 @@ export default function Dashboard() {
         </div>
       </div>
 
-      
+
 
       {error && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
           {error}
         </div>
       )}
-
+      {/* verdsfecrsdfe */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
           title="Invested Amount"

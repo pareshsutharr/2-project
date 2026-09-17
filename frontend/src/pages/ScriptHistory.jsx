@@ -51,6 +51,13 @@ export default function ScriptHistory() {
   }, [load]);
 
   const totalPnl = trades.reduce((sum, r) => sum + (realizedPnl(r) ?? 0), 0);
+  const totalQty = trades.reduce((sum, r) => sum + (r.sell_qty != null ? Number(r.sell_qty) : 0), 0);
+  const avgBuyPrice = totalQty > 0
+    ? trades.reduce((sum, r) => sum + Number(r.buy_price) * (r.sell_qty != null ? Number(r.sell_qty) : 0), 0) / totalQty
+    : null;
+  const avgSellPrice = totalQty > 0
+    ? trades.reduce((sum, r) => sum + (r.sell_price != null ? Number(r.sell_price) : 0) * (r.sell_qty != null ? Number(r.sell_qty) : 0), 0) / totalQty
+    : null;
 
   const handleExport = () => {
     const stamp = new Date().toISOString().slice(0, 10);
@@ -104,11 +111,21 @@ export default function ScriptHistory() {
             <h2 className="text-lg font-semibold text-slate-900">Completed Trades</h2>
             <p className="mt-0.5 text-sm text-slate-500">{trades.length} trade{trades.length === 1 ? "" : "s"} booked</p>
           </div>
-          <div className="text-right">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Total P&amp;L</p>
-            <p className={`text-lg font-semibold tabular-nums ${totalPnl >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
-              {fmtNum(totalPnl, { maximumFractionDigits: 2 })}
-            </p>
+          <div className="flex items-center gap-6">
+            <div className="text-right">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Avg Buy Price</p>
+              <p className="text-lg font-semibold tabular-nums text-slate-700">{fmtNum(avgBuyPrice, { maximumFractionDigits: 2 })}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Avg Sell Price</p>
+              <p className="text-lg font-semibold tabular-nums text-slate-700">{fmtNum(avgSellPrice, { maximumFractionDigits: 2 })}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Total P&amp;L</p>
+              <p className={`text-lg font-semibold tabular-nums ${totalPnl >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
+                {fmtNum(totalPnl, { maximumFractionDigits: 2 })}
+              </p>
+            </div>
           </div>
         </div>
         <div className="overflow-x-auto">

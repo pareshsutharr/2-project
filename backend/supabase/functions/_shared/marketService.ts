@@ -45,6 +45,21 @@ export async function fetchNifty50Quote(): Promise<{ value: number | null; chang
   return { value: price, changePercent };
 }
 
+export async function fetchSensexQuote(): Promise<{ value: number | null; changePercent: number | null }> {
+  const data = await yahooChart("^BSESN");
+  if (!data) return { value: null, changePercent: null };
+  const result = data?.chart?.result;
+  if (!result || !result.length) return { value: null, changePercent: null };
+  const meta = result[0]?.meta ?? {};
+  const price = meta.regularMarketPrice;
+  const prev = meta.previousClose ?? meta.chartPreviousClose;
+  if (price === null || price === undefined || prev === null || prev === undefined || prev === 0) {
+    return { value: price ?? null, changePercent: null };
+  }
+  const changePercent = ((price - prev) / prev) * 100;
+  return { value: price, changePercent };
+}
+
 export async function fetchStockQuoteNse(name: string): Promise<number | null> {
   const clean = name.trim().toUpperCase();
   if (!clean) return null;

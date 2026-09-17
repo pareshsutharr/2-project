@@ -37,6 +37,11 @@ export async function fetchNiftyQuote() {
   return data;
 }
 
+export async function fetchSensexQuote() {
+  const { data } = await client.get("/market/sensex");
+  return data;
+}
+
 export async function fetchDashboardSummary() {
   const { data } = await client.get("/dashboard/summary");
   return data;

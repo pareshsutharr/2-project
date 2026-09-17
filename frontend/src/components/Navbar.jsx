@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { Activity, CalendarDays, LayoutDashboard, Newspaper, Settings2, History, TrendingUp, TrendingDown } from "lucide-react";
-import { useEffect, useState } from "react";
-import { fetchNiftyQuote } from "../services/api.js";
+import { fetchNiftyQuote, fetchSensexQuote } from "../services/api.js";
+import { useIndexQuote } from "../utils/useIndexQuote.js";
 import { usePriceDirection } from "../utils/usePriceDirection.js";
 
 const nav = [
@@ -12,57 +12,51 @@ const nav = [
   { to: "/trade-history", label: "Trade History", icon: History },
 ];
 
-function formatNifty(value) {
+function formatIndexValue(value) {
   if (value == null || Number.isNaN(value)) return "—";
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value);
 }
 
-export default function Navbar() {
-  const [nifty, setNifty] = useState({ value: null, changePercent: null, loading: true, error: false });
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await fetchNiftyQuote();
-        if (!cancelled) {
-          setNifty({
-            value: data.value,
-            changePercent: data.change_percent,
-            loading: false,
-            error: false,
-          });
-        }
-      } catch {
-        if (!cancelled) {
-          setNifty((s) => ({ ...s, loading: false, error: true }));
-        }
-      }
-    })();
-    const id = setInterval(async () => {
-      try {
-        const data = await fetchNiftyQuote();
-        if (!cancelled) {
-          setNifty({
-            value: data.value,
-            changePercent: data.change_percent,
-            loading: false,
-            error: false,
-          });
-        }
-      } catch {
-        /* keep last */
-      }
-    }, 15000);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, []);
-
-  const pct = nifty.changePercent;
+function IndexQuote({ label, quote }) {
+  const pct = quote.changePercent;
   const positive = pct != null && pct >= 0;
-  const { direction, flash } = usePriceDirection(nifty.value);
+  const { direction, flash } = usePriceDirection(quote.value);
+
+  return (
+    <div className="flex flex-col">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{label}</span>
+      {quote.loading ? (
+        <span className="text-sm text-slate-400">Loading…</span>
+      ) : quote.error ? (
+        <span className="text-sm text-slate-400">Unavailable</span>
+      ) : (
+        <span
+          className={[
+            "inline-flex items-center gap-1 rounded-md px-1 text-sm font-semibold tabular-nums text-slate-800 transition-colors duration-500",
+            flash ? (direction === "up" ? "bg-emerald-100" : "bg-rose-100") : "bg-transparent",
+          ].join(" ")}
+        >
+          {direction === "up" ? (
+            <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+          ) : direction === "down" ? (
+            <TrendingDown className="h-3.5 w-3.5 text-rose-600" />
+          ) : null}
+          {formatIndexValue(quote.value)}
+          {pct != null && (
+            <span className={`ml-1 text-xs font-semibold ${positive ? "text-emerald-600" : "text-rose-600"}`}>
+              ({positive ? "+" : ""}
+              {pct.toFixed(2)}%)
+            </span>
+          )}
+        </span>
+      )}
+    </div>
+  );
+}
+
+export default function Navbar() {
+  const nifty = useIndexQuote(fetchNiftyQuote);
+  const sensex = useIndexQuote(fetchSensexQuote);
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 shadow-md backdrop-blur-md">
@@ -80,34 +74,8 @@ export default function Navbar() {
 
           <div className="hidden h-10 w-px bg-slate-200 sm:block" aria-hidden />
 
-          <div className="flex flex-col">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">NIFTY 50</span>
-            {nifty.loading ? (
-              <span className="text-sm text-slate-400">Loading…</span>
-            ) : nifty.error ? (
-              <span className="text-sm text-slate-400">Unavailable</span>
-            ) : (
-              <span
-                className={[
-                  "inline-flex items-center gap-1 rounded-md px-1 text-sm font-semibold tabular-nums text-slate-800 transition-colors duration-500",
-                  flash ? (direction === "up" ? "bg-emerald-100" : "bg-rose-100") : "bg-transparent",
-                ].join(" ")}
-              >
-                {direction === "up" ? (
-                  <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
-                ) : direction === "down" ? (
-                  <TrendingDown className="h-3.5 w-3.5 text-rose-600" />
-                ) : null}
-                {formatNifty(nifty.value)}
-                {pct != null && (
-                  <span className={`ml-1 text-xs font-semibold ${positive ? "text-emerald-600" : "text-rose-600"}`}>
-                    ({positive ? "+" : ""}
-                    {pct.toFixed(2)}%)
-                  </span>
-                )}
-              </span>
-            )}
-          </div>
+          <IndexQuote label="NIFTY 50" quote={nifty} />
+          <IndexQuote label="SENSEX" quote={sensex} />
         </div>
 
         <nav className="flex flex-wrap items-center gap-1 sm:justify-end" aria-label="Main">

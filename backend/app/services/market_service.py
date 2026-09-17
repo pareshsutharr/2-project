@@ -57,6 +57,23 @@ def fetch_nifty_50_quote() -> tuple[float | None, float | None]:
     return float(price), change_pct
 
 
+def fetch_sensex_quote() -> tuple[float | None, float | None]:
+    data = _yahoo_chart("^BSESN")
+    if not data:
+        return None, None
+    chart = data.get("chart") or {}
+    result = chart.get("result")
+    if not result:
+        return None, None
+    meta = (result[0] or {}).get("meta") or {}
+    price = meta.get("regularMarketPrice")
+    prev = meta.get("previousClose") or meta.get("chartPreviousClose")
+    if price is None or prev is None or prev == 0:
+        return (float(price) if price is not None else None, None)
+    change_pct = (float(price) - float(prev)) / float(prev) * 100.0
+    return float(price), change_pct
+
+
 def fetch_stock_quote_nse(name: str) -> float | None:
     """
     Returns current market price for an NSE equity symbol (NAME.NS).

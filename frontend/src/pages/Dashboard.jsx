@@ -77,29 +77,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 
-      fwesrfwesdrf
-      ews
-      drf
-      wes
-      rf
-      wesdx
-      import React from 'react'
       
-      export default function edr
-      te
-      drtf
-      gerdcft
-      s() {
-        return (
-          <div>edr
-          te
-          drtf
-          gerdcft
-          s</div>
-        )
-      }
-       */}
 
       {error && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">

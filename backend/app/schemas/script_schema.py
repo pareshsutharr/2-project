@@ -48,3 +48,8 @@ class ScriptValidateResponse(BaseModel):
 class NiftyQuoteResponse(BaseModel):
     value: float | None
     change_percent: float | None
+
+
+class SensexQuoteResponse(BaseModel):
+    value: float | None
+    change_percent: float | None
